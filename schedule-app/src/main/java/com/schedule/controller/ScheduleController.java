@@ -4,8 +4,8 @@ import com.schedule.dto.ScheduleResponse;
 import com.schedule.entity.Schedule;
 import com.schedule.entity.User;
 import com.schedule.service.ScheduleService;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -23,11 +23,8 @@ public class ScheduleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getMySchedule(@RequestParam String yearMonth, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "未登录"));
-        }
+    public ResponseEntity<?> getMySchedule(@RequestParam String yearMonth) {
+        User user = getCurrentUser();
         boolean published = scheduleService.isPublished(yearMonth);
         if (!published) {
             return ResponseEntity.ok(Map.of("published", false));
@@ -48,11 +45,7 @@ public class ScheduleController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getAll(@RequestParam String yearMonth, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> getAll(@RequestParam String yearMonth) {
         List<Schedule> schedules = scheduleService.getByMonth(yearMonth);
         List<ScheduleResponse> list = new ArrayList<>();
         for (Schedule s : schedules) {
@@ -68,5 +61,9 @@ public class ScheduleController {
         boolean published = scheduleService.isPublished(yearMonth);
         Map<String, Object> stats = scheduleService.getStats(yearMonth);
         return ResponseEntity.ok(Map.of("published", published, "data", list, "stats", stats));
+    }
+
+    private User getCurrentUser() {
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

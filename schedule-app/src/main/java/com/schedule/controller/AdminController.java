@@ -3,10 +3,8 @@ package com.schedule.controller;
 import com.schedule.dto.GenerateRequest;
 import com.schedule.entity.Schedule;
 import com.schedule.entity.ShiftRequirement;
-import com.schedule.entity.User;
 import com.schedule.service.RequirementService;
 import com.schedule.service.ScheduleService;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +23,7 @@ public class AdminController {
     }
 
     @GetMapping("/requirements")
-    public ResponseEntity<?> getRequirements(@RequestParam String yearMonth, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> getRequirements(@RequestParam String yearMonth) {
         List<ShiftRequirement> reqs = requirementService.getByMonth(yearMonth);
         List<Map<String, Object>> result = new ArrayList<>();
         for (ShiftRequirement req : reqs) {
@@ -47,11 +41,7 @@ public class AdminController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<?> generateSchedule(@RequestBody GenerateRequest request, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> generateSchedule(@RequestBody GenerateRequest request) {
         try {
             List<Schedule> schedules = scheduleService.generate(request.getYearMonth());
             return ResponseEntity.ok(Map.of("message", "排班生成成功", "count", schedules.size()));
@@ -61,11 +51,7 @@ public class AdminController {
     }
 
     @PutMapping("/schedule/{id}")
-    public ResponseEntity<?> updateShift(@PathVariable Long id, @RequestBody Map<String, String> body, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> updateShift(@PathVariable Long id, @RequestBody Map<String, String> body) {
         try {
             Schedule updated = scheduleService.updateShift(id, body.get("shift"));
             return ResponseEntity.ok(Map.of("message", "修改成功", "id", updated.getId()));
@@ -75,22 +61,14 @@ public class AdminController {
     }
 
     @PostMapping("/publish")
-    public ResponseEntity<?> publish(@RequestBody Map<String, String> body, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> publish(@RequestBody Map<String, String> body) {
         String yearMonth = body.get("yearMonth");
         scheduleService.publish(yearMonth);
         return ResponseEntity.ok(Map.of("message", "排班已发布"));
     }
 
     @PostMapping("/unpublish")
-    public ResponseEntity<?> unpublish(@RequestBody Map<String, String> body, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null || user.getRole() != User.Role.ADMIN) {
-            return ResponseEntity.status(403).body(Map.of("error", "权限不足"));
-        }
+    public ResponseEntity<?> unpublish(@RequestBody Map<String, String> body) {
         String yearMonth = body.get("yearMonth");
         scheduleService.unpublish(yearMonth);
         return ResponseEntity.ok(Map.of("message", "已取消发布"));
