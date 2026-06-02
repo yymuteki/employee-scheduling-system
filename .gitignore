@@ -1,0 +1,24 @@
+# Build output
+target/
+node_modules/
+dist/
+build/
+*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Data files
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Superpowers
+.superpowers/
+
+# Misc
+*.log
