@@ -9,9 +9,7 @@ const client = axios.create({
 client.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      window.location.href = '/login'
-    }
+    // Don't redirect — App.tsx handles unauthenticated state by showing LoginPage
     return Promise.reject(err)
   }
 )
