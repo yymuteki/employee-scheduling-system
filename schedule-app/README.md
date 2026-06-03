@@ -73,41 +73,48 @@ mvn package -DskipTests
 
 ## AI Development Workflow
 
-本项目使用 AI 驱动的开发流程。核心业务逻辑通过结构化的 Prompt 交给 AI 辅助实现。
+本项目 **100% 使用 Claude Code 辅助开发**，从设计文档到代码实现、测试、调试、排错全流程 AI 驱动。核心模块通过结构化 Prompt 生成初稿，人工审查后迭代修正。
+
+### 关键数据
+
+| 指标 | 数值 |
+|---|---|
+| AI 生成代码占比 | ~90%（核心逻辑全由 Prompt 驱动生成） |
+| 结构化 Prompt | 3 份（排班逻辑 / LLM 集成 / 前端 API 对接） |
+| Git 提交 | 14 次（每步可追溯） |
+| AI 辅助调试 | extractJson 最外层匹配 bug、CSRF 配置、session 固定等 |
+| 后端 + 前端文件 | 29 Java + 9 TSX |
 
 ### 开发流程
 
 ```
-设计文档 (PRD/SPEC)
-       │
-       ▼
-拆分 Prompt ──────→ AI 生成代码 ──────→ 人工审查 + 测试
+PRD 设计文档 ──→ 拆成结构化 Prompt ──→ Claude Code 生成代码
        │                                      │
        ▼                                      ▼
-docs/prompts/                          验证通过 → 提交
+docs/superpowers/specs/             人工审查 → 编译 → 双端测试
+                                            │
+       ┌────────────────────────────────────┘
+       ▼
+  Bug 修复（追加 Prompt → AI 定位 → 验证）
+       │
+       ▼
+  Git 提交（每步可追溯）
 ```
 
-### Prompt 文件
+### Prompt 工程
 
-所有核心 Prompt 存放在 `../docs/prompts/` 目录下：
+核心 Prompt 存放在 `../docs/prompts/`，直接驱动代码生成：
 
-| 文件 | 作用 |
-|------|------|
-| `01_scheduling_logic.md` | 排班服务层逻辑：硬约束验证、LLM 结果解析、发布/取消发布 |
-| `02_deepseek_integration.md` | DeepSeek API 集成：HTTP 调用封装、Prompt Engineering、JSON 解析容错 |
-
-### 使用方式
-
-1. **编写设计文档**：先用自然语言描述需求和架构（参考 `docs/superpowers/specs/` 下的 SPEC 文档）
-2. **拆分 Prompt**：从设计文档中提取核心逻辑，拆分为结构化的 Prompt 文件（参考 `docs/prompts/`）
-3. **驱动 AI 编码**：将 Prompt 提供给 AI 工具（Claude Code / Cursor 等），生成初始代码
-4. **人工审查**：审查生成的代码是否正确、是否符合项目规范
-5. **运行测试**：启动应用，走通主链路，验证约束条件（参考本 README 中「硬性规则」）
-6. **迭代修正**：测试中发现的问题通过追加指令修复，重要修复记录在项目 memory 中
+| 文件 | 生成模块 | 关键约束 |
+|---|---|---|
+| `01_scheduling_logic.md` | ScheduleService（498行） | 5条硬约束 + 验证重试 + 事务管理 |
+| `02_deepseek_integration.md` | LLMService + DeepSeek API | Prompt 模板 + JSON 解析容错 + 循环日期展开 |
+| `03_frontend_api_integration.md` | React 页面 + API 对接 | 双端路由 + CSRF + 按钮状态逻辑 |
 
 ### 实践原则
 
-- **Prompt 先于代码**：复杂逻辑先写好 Prompt，再让 AI 生成实现
-- **Prompt 即文档**：Prompt 本身也是技术文档，新人可通过 Prompt 快速理解模块设计
-- **保留核心 Prompt**：关键的 Prompt 提交到 `docs/prompts/`，便于追溯和复盘
-- **约束优于描述**：Prompt 中明确列出硬约束（如"同一员工连续工作不超过 4 天"），而非笼统描述（"合理安排排班"）
+- **Prompt 先于代码**：复杂逻辑先写好 Prompt 和约束，再让 AI 生成实现
+- **Prompt 即文档**：结构化 Prompt 本身也是技术文档，新人可直接阅读理解模块设计
+- **约束优于描述**：Prompt 中明确列出硬约束（如 `同一员工连续工作 ≤ 4 天`），而非笼统描述（`合理安排排班`）
+- **每步可验证**：每次 AI 生成后立即编译 + 双端测试，确保不积累问题
+- **调试反馈闭环**：测试中发现的 bug 通过追加指令让 AI 定位根因并修复，修复后记录到项目 memory
