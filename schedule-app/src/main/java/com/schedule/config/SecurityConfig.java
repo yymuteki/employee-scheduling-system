@@ -25,10 +25,11 @@ public class SecurityConfig {
                 .csrfTokenRepository(csrfRepo)
                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
             )
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/csrf", "/index.html", "/assets/**", "/").permitAll()
+                .requestMatchers("/api/auth/**", "/api/csrf", "/index.html", "/assets/**", "/", "/h2-console/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             )
