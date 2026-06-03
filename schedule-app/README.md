@@ -70,3 +70,44 @@ mvn package -DskipTests
 ## 数据
 - 存储在 `./data/schedule.mv.db`（H2 文件数据库）
 - 首次启动自动创建表结构和初始用户
+
+## AI Development Workflow
+
+本项目使用 AI 驱动的开发流程。核心业务逻辑通过结构化的 Prompt 交给 AI 辅助实现。
+
+### 开发流程
+
+```
+设计文档 (PRD/SPEC)
+       │
+       ▼
+拆分 Prompt ──────→ AI 生成代码 ──────→ 人工审查 + 测试
+       │                                      │
+       ▼                                      ▼
+docs/prompts/                          验证通过 → 提交
+```
+
+### Prompt 文件
+
+所有核心 Prompt 存放在 `../docs/prompts/` 目录下：
+
+| 文件 | 作用 |
+|------|------|
+| `01_scheduling_logic.md` | 排班服务层逻辑：硬约束验证、LLM 结果解析、发布/取消发布 |
+| `02_deepseek_integration.md` | DeepSeek API 集成：HTTP 调用封装、Prompt Engineering、JSON 解析容错 |
+
+### 使用方式
+
+1. **编写设计文档**：先用自然语言描述需求和架构（参考 `docs/superpowers/specs/` 下的 SPEC 文档）
+2. **拆分 Prompt**：从设计文档中提取核心逻辑，拆分为结构化的 Prompt 文件（参考 `docs/prompts/`）
+3. **驱动 AI 编码**：将 Prompt 提供给 AI 工具（Claude Code / Cursor 等），生成初始代码
+4. **人工审查**：审查生成的代码是否正确、是否符合项目规范
+5. **运行测试**：启动应用，走通主链路，验证约束条件（参考本 README 中「硬性规则」）
+6. **迭代修正**：测试中发现的问题通过追加指令修复，重要修复记录在项目 memory 中
+
+### 实践原则
+
+- **Prompt 先于代码**：复杂逻辑先写好 Prompt，再让 AI 生成实现
+- **Prompt 即文档**：Prompt 本身也是技术文档，新人可通过 Prompt 快速理解模块设计
+- **保留核心 Prompt**：关键的 Prompt 提交到 `docs/prompts/`，便于追溯和复盘
+- **约束优于描述**：Prompt 中明确列出硬约束（如"同一员工连续工作不超过 4 天"），而非笼统描述（"合理安排排班"）
