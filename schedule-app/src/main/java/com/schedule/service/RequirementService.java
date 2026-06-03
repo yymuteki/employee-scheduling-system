@@ -1,6 +1,7 @@
 package com.schedule.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.schedule.entity.AuditLog;
 import com.schedule.entity.ShiftRequirement;
 import com.schedule.entity.User;
 import com.schedule.repository.ShiftRequirementRepository;
@@ -14,11 +15,14 @@ public class RequirementService {
 
     private final ShiftRequirementRepository repository;
     private final LLMService llmService;
+    private final AuditLogService auditLogService;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public RequirementService(ShiftRequirementRepository repository, LLMService llmService) {
+    public RequirementService(ShiftRequirementRepository repository, LLMService llmService,
+                              AuditLogService auditLogService) {
         this.repository = repository;
         this.llmService = llmService;
+        this.auditLogService = auditLogService;
     }
 
     public ShiftRequirement save(User user, String yearMonth, String naturalInput) {
@@ -38,7 +42,14 @@ public class RequirementService {
             req.setParsedPreferences("{}");
         }
 
-        return repository.save(req);
+        ShiftRequirement saved = repository.save(req);
+        auditLogService.log(AuditLog.Action.SUBMIT, "Requirement", saved.getId(),
+                Map.of("yearMonth", yearMonth,
+                       "userId", user.getId(),
+                       "naturalInput", naturalInput,
+                       "parsedUnavailable", saved.getParsedUnavailable(),
+                       "parsedPreferences", saved.getParsedPreferences()));
+        return saved;
     }
 
     public ShiftRequirement getByUserAndMonth(Long userId, String yearMonth) {

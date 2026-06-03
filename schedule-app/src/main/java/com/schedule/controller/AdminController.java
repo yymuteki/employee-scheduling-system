@@ -1,8 +1,10 @@
 package com.schedule.controller;
 
 import com.schedule.dto.GenerateRequest;
+import com.schedule.entity.AuditLog;
 import com.schedule.entity.Schedule;
 import com.schedule.entity.ShiftRequirement;
+import com.schedule.repository.AuditLogRepository;
 import com.schedule.service.RequirementService;
 import com.schedule.service.ScheduleService;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +19,13 @@ public class AdminController {
 
     private final RequirementService requirementService;
     private final ScheduleService scheduleService;
+    private final AuditLogRepository auditLogRepository;
 
-    public AdminController(RequirementService requirementService, ScheduleService scheduleService) {
+    public AdminController(RequirementService requirementService, ScheduleService scheduleService,
+                           AuditLogRepository auditLogRepository) {
         this.requirementService = requirementService;
         this.scheduleService = scheduleService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping("/requirements")
@@ -87,5 +92,16 @@ public class AdminController {
         String yearMonth = body.get("yearMonth");
         scheduleService.unpublish(yearMonth);
         return ResponseEntity.ok(Map.of("message", "已取消发布"));
+    }
+
+    @GetMapping("/audit-logs")
+    public ResponseEntity<?> getAuditLogs(@RequestParam(required = false) String entityName) {
+        List<AuditLog> logs;
+        if (entityName != null && !entityName.isEmpty()) {
+            logs = auditLogRepository.findByEntityNameOrderByTimestampDesc(entityName);
+        } else {
+            logs = auditLogRepository.findAllByOrderByTimestampDesc();
+        }
+        return ResponseEntity.ok(Map.of("data", logs));
     }
 }

@@ -1,6 +1,7 @@
 package com.schedule.service;
 
 import com.schedule.dto.StatsResponse;
+import com.schedule.entity.AuditLog;
 import com.schedule.entity.Schedule;
 import com.schedule.entity.ShiftRequirement;
 import com.schedule.entity.User;
@@ -22,13 +23,16 @@ public class ScheduleService {
     private final UserRepository userRepository;
     private final RequirementService requirementService;
     private final LLMService llmService;
+    private final AuditLogService auditLogService;
 
     public ScheduleService(ScheduleRepository scheduleRepository, UserRepository userRepository,
-                           RequirementService requirementService, LLMService llmService) {
+                           RequirementService requirementService, LLMService llmService,
+                           AuditLogService auditLogService) {
         this.scheduleRepository = scheduleRepository;
         this.userRepository = userRepository;
         this.requirementService = requirementService;
         this.llmService = llmService;
+        this.auditLogService = auditLogService;
     }
 
     public List<Schedule> getByMonth(String yearMonth) {
@@ -81,7 +85,10 @@ public class ScheduleService {
             List<Schedule> parsed = parseGeneratedSchedule(generated, employees, nameToUser, yearMonth);
             List<String> violations = validateHardConstraints(parsed, employees, yearMonth);
             if (violations.isEmpty()) {
-                return scheduleRepository.saveAll(parsed);
+                List<Schedule> saved = scheduleRepository.saveAll(parsed);
+                auditLogService.log(AuditLog.Action.CREATE, "Schedule", null,
+                        Map.of("yearMonth", yearMonth, "recordCount", saved.size()));
+                return saved;
             }
             lastError = "第" + (attempt + 1) + "次生成不满足以下约束: " + String.join("; ", violations);
         }
@@ -207,8 +214,15 @@ public class ScheduleService {
             }
         }
 
+        Schedule.Shift oldShift = schedule.getShift();
         schedule.setShift(newShift);
-        return scheduleRepository.save(schedule);
+        Schedule saved = scheduleRepository.save(schedule);
+        auditLogService.log(AuditLog.Action.UPDATE, "Schedule", saved.getId(),
+                Map.of("date", saved.getDate().toString(),
+                       "userId", saved.getUser().getId(),
+                       "oldShift", oldShift.name(),
+                       "newShift", newShift.name()));
+        return saved;
     }
 
     /**
@@ -270,16 +284,25 @@ public class ScheduleService {
             Schedule s = createSchedule(targetUser, date, shiftType, yearMonth);
             scheduleRepository.save(s);
         }
+        auditLogService.log(AuditLog.Action.UPDATE, "Schedule", null,
+                Map.of("yearMonth", yearMonth,
+                       "date", date.toString(),
+                       "shift", shiftType.name(),
+                       "userName", userName));
     }
 
     @Transactional
     public void publish(String yearMonth) {
         scheduleRepository.publishByYearMonth(yearMonth);
+        auditLogService.log(AuditLog.Action.PUBLISH, "Schedule", null,
+                Map.of("yearMonth", yearMonth));
     }
 
     @Transactional
     public void unpublish(String yearMonth) {
         scheduleRepository.unpublishByYearMonth(yearMonth);
+        auditLogService.log(AuditLog.Action.UNPUBLISH, "Schedule", null,
+                Map.of("yearMonth", yearMonth));
     }
 
     public StatsResponse getStats(String yearMonth) {
