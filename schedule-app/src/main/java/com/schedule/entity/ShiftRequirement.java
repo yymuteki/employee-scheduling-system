@@ -26,6 +26,9 @@ public class ShiftRequirement {
     @Column(name = "parsed_preferences", columnDefinition = "TEXT")
     private String parsedPreferences;
 
+    @Column(name = "parsed_notes", columnDefinition = "TEXT")
+    private String parsedNotes;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -57,6 +60,8 @@ public class ShiftRequirement {
     public void setParsedUnavailable(String parsedUnavailable) { this.parsedUnavailable = parsedUnavailable; }
     public String getParsedPreferences() { return parsedPreferences; }
     public void setParsedPreferences(String parsedPreferences) { this.parsedPreferences = parsedPreferences; }
+    public String getParsedNotes() { return parsedNotes; }
+    public void setParsedNotes(String parsedNotes) { this.parsedNotes = parsedNotes; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

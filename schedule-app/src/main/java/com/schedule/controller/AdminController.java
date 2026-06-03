@@ -41,6 +41,7 @@ public class AdminController {
             entry.put("naturalInput", req.getNaturalInput());
             entry.put("parsedUnavailable", req.getParsedUnavailable());
             entry.put("parsedPreferences", req.getParsedPreferences());
+            entry.put("parsedNotes", req.getParsedNotes());
             result.add(entry);
         }
         return ResponseEntity.ok(result);

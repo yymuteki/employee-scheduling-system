@@ -10,6 +10,7 @@ interface ReqItem {
   naturalInput: string | null
   parsedUnavailable: string
   parsedPreferences: string
+  parsedNotes: string | null
 }
 
 export default function AdminRequirements({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -74,14 +75,15 @@ export default function AdminRequirements({ user, onLogout }: { user: User; onLo
                 <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#374151' }}>员工姓名</th>
                 <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#374151' }}>不可上班日期</th>
                 <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#374151' }}>偏好班次</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#374151' }}>解析备注</th>
                 <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#374151' }}>原始输入</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={4} style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>加载中...</td></tr>
+                <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>加载中...</td></tr>
               ) : reqs.length === 0 ? (
-                <tr><td colSpan={4} style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>暂无数据</td></tr>
+                <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>暂无数据</td></tr>
               ) : (
                 reqs.map(req => {
                   let unavailable = '无'
@@ -97,6 +99,9 @@ export default function AdminRequirements({ user, onLogout }: { user: User; onLo
                       <td style={{ padding: '9px 14px', color: '#374151' }}>{req.userName}</td>
                       <td style={{ padding: '9px 14px', color: unavailable === '无' ? '#9ca3af' : '#374151' }}>{unavailable}</td>
                       <td style={{ padding: '9px 14px', color: preference === '无特别偏好' ? '#9ca3af' : '#374151' }}>{preference}</td>
+                      <td style={{ padding: '9px 14px', color: req.parsedNotes ? '#dc2626' : '#9ca3af', fontSize: 12, maxWidth: 150 }}>
+                        {req.parsedNotes || '—'}
+                      </td>
                       <td style={{ padding: '9px 14px', color: req.naturalInput ? '#6b7280' : '#9ca3af' }}>{req.naturalInput || '（空）'}</td>
                     </tr>
                   )

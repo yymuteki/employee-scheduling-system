@@ -31,16 +31,17 @@ public class LLMService {
         String prompt = """
             你是一个排班系统的助手。请解析员工的自然语言需求，提取以下信息。
             当前排班月份：%s
-            
+
             请从以下文本中提取：
             1. 不可上班的日期（格式：YYYY-MM-DD）
             2. 偏好班次（早班或晚班）
-            
+
             请以JSON格式返回，格式必须严格如下：
             {"unavailableDates": ["2026-07-03"], "preference": "早班", "notes": ""}
-            
+
             如果某字段没有信息，使用空数组或空字符串。
-            
+            只输出JSON，不要有任何其他文字。
+
             员工输入：%s
             """.formatted(yearMonth, naturalInput);
 
@@ -130,15 +131,19 @@ public class LLMService {
 
     private String extractJson(String text) {
         text = text.trim();
-        int start = text.indexOf('[');
-        int end = text.lastIndexOf(']');
-        if (start >= 0 && end > start) {
-            return text.substring(start, end + 1);
+        // Find both [ and { positions, use whichever is outermost (first)
+        int arrStart = text.indexOf('[');
+        int objStart = text.indexOf('{');
+        int arrEnd = text.lastIndexOf(']');
+        int objEnd = text.lastIndexOf('}');
+
+        // Prefer object if it starts before the first array, or no array exists
+        if (objStart >= 0 && (arrStart < 0 || objStart < arrStart) && objEnd > objStart) {
+            return text.substring(objStart, objEnd + 1);
         }
-        start = text.indexOf('{');
-        end = text.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            return text.substring(start, end + 1);
+        // Otherwise prefer array
+        if (arrStart >= 0 && arrEnd > arrStart) {
+            return text.substring(arrStart, arrEnd + 1);
         }
         return text;
     }

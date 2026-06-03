@@ -41,6 +41,7 @@ public class RequirementService {
             req.setParsedUnavailable("[]");
             req.setParsedPreferences("{}");
         }
+        req.setParsedNotes((String) parsed.getOrDefault("notes", ""));
 
         ShiftRequirement saved = repository.save(req);
         auditLogService.log(AuditLog.Action.SUBMIT, "Requirement", saved.getId(),
