@@ -1,6 +1,7 @@
 package com.schedule.controller;
 
 import com.schedule.dto.ScheduleResponse;
+import com.schedule.dto.StatsResponse;
 import com.schedule.entity.Schedule;
 import com.schedule.entity.User;
 import com.schedule.service.ScheduleService;
@@ -59,11 +60,15 @@ public class ScheduleController {
             list.add(r);
         }
         boolean published = scheduleService.isPublished(yearMonth);
-        Map<String, Object> stats = scheduleService.getStats(yearMonth);
+        StatsResponse stats = scheduleService.getStats(yearMonth);
         return ResponseEntity.ok(Map.of("published", published, "data", list, "stats", stats));
     }
 
     private User getCurrentUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof User user) {
+            return user;
+        }
+        throw new RuntimeException("用户未登录");
     }
 }

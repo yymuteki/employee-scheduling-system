@@ -46,7 +46,7 @@ export default function AdminRequirements({ user, onLogout }: { user: User; onLo
           <a href="/admin/schedule" style={{ fontSize: 13, color: '#94a3b8', textDecoration: 'none' }}>排班管理</a>
         </div>
         <span style={{ fontSize: 13, color: '#cbd5e1' }}>
-          管理员 (admin) &nbsp;
+          {user.name} &nbsp;
           <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={handleLogout}>退出</span>
         </span>
       </div>

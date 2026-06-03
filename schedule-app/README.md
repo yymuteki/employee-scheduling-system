@@ -38,8 +38,8 @@ mvn package -DskipTests
 ## 访问
 
 - 地址：http://localhost:8080
-- 管理员：admin / admin123
-- 员工：emp1 / 123456（张三），emp2 / 123456（李四），... emp15 / 123456（沈七）
+- 管理员账号：admin（默认密码见 AuthService.initUsers()）
+- 员工账号：emp1 ~ emp15（默认密码见 AuthService.initUsers()）
 
 ## 功能
 

@@ -105,36 +105,43 @@ export default function AdminSchedule({ user, onLogout }: { user: User; onLogout
       return
     }
 
-    // Update morning if changed
-    if (editing.morning) {
-      const newShiftName = editMorning === editing.morning.userName ? 'MORNING' :
-        (editMorning === '（空）' ? 'OFF' : 'MORNING')
-      if (newShiftName !== editing.morning.shift || (newShiftName === 'MORNING' && editMorning !== editing.morning.userName)) {
-        try {
-          await client.put(`/admin/schedule/${editing.morning.id}`, { shift: newShiftName })
-        } catch (err: any) {
-          const msg = err.response?.data?.error || '保存失败'
-          setAlertMsg(msg)
-          setAlertOpen(true)
-          return
-        }
+    const calls: Promise<any>[] = []
+
+    // Reassign morning if changed
+    const oldMorningName = editing.morning?.userName || '（空）'
+    if (editMorning !== oldMorningName) {
+      if (editMorning !== '（空）') {
+        calls.push(client.post('/admin/schedule/assign', {
+          yearMonth, date: editing.date, shift: 'MORNING', userName: editMorning
+        }))
+      } else if (editing.morning) {
+        // Clear the old morning assignment
+        calls.push(client.put(`/admin/schedule/${editing.morning.id}`, { shift: 'OFF' }))
       }
     }
-    // Update evening if changed
-    if (editing.evening) {
-      const newShiftName = editEvening === editing.evening.userName ? 'EVENING' :
-        (editEvening === '（空）' ? 'OFF' : 'EVENING')
-      if (newShiftName !== editing.evening.shift || (newShiftName === 'EVENING' && editEvening !== editing.evening.userName)) {
-        try {
-          await client.put(`/admin/schedule/${editing.evening.id}`, { shift: newShiftName })
-        } catch (err: any) {
-          const msg = err.response?.data?.error || '保存失败'
-          setAlertMsg(msg)
-          setAlertOpen(true)
-          return
-        }
+
+    // Reassign evening if changed
+    const oldEveningName = editing.evening?.userName || '（空）'
+    if (editEvening !== oldEveningName) {
+      if (editEvening !== '（空）') {
+        calls.push(client.post('/admin/schedule/assign', {
+          yearMonth, date: editing.date, shift: 'EVENING', userName: editEvening
+        }))
+      } else if (editing.evening) {
+        // Clear the old evening assignment
+        calls.push(client.put(`/admin/schedule/${editing.evening.id}`, { shift: 'OFF' }))
       }
     }
+
+    try {
+      await Promise.all(calls)
+    } catch (err: any) {
+      const msg = err.response?.data?.error || '保存失败'
+      setAlertMsg(msg)
+      setAlertOpen(true)
+      return
+    }
+
     setEditing(null)
     fetchData()
   }
@@ -163,7 +170,7 @@ export default function AdminSchedule({ user, onLogout }: { user: User; onLogout
           <span style={{ fontSize: 13, color: '#60a5fa', cursor: 'pointer', borderBottom: '2px solid #60a5fa', paddingBottom: 2 }}>排班管理</span>
         </div>
         <span style={{ fontSize: 13, color: '#cbd5e1' }}>
-          管理员 (admin) &nbsp;
+          {user.name} &nbsp;
           <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={handleLogout}>退出</span>
         </span>
       </div>

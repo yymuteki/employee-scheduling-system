@@ -14,6 +14,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findByYearMonth(String yearMonth);
     List<Schedule> findByUserIdAndYearMonth(Long userId, String yearMonth);
     void deleteByYearMonthAndStatus(String yearMonth, Schedule.Status status);
+    void deleteByYearMonth(String yearMonth);
 
     @Modifying
     @Transactional
@@ -30,4 +31,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     @Query("SELECT s FROM Schedule s WHERE s.user.id = :userId AND s.date = :date")
     Optional<Schedule> findByUserIdAndDate(Long userId, LocalDate date);
+
+    @Query("SELECT s FROM Schedule s WHERE s.date = :date")
+    List<Schedule> findByDate(LocalDate date);
 }

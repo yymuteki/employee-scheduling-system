@@ -5,6 +5,7 @@ import com.schedule.entity.User;
 import com.schedule.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,13 +28,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletRequest req) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest req) {
         User user = authService.login(request.getUsername(), request.getPassword());
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "用户名或密码错误"));
         }
 
-        // Create Spring Security authentication and save to session
+        // Prevent session fixation: invalidate old session, then create a new one
+        HttpSession oldSession = req.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+
+        // Create Spring Security authentication and save to new session
         String authority = "ROLE_" + user.getRole().name();
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(user, null,
@@ -70,10 +78,4 @@ public class AuthController {
         ));
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpSession session) {
-        SecurityContextHolder.clearContext();
-        session.invalidate();
-        return ResponseEntity.ok(Map.of("message", "已退出"));
-    }
 }

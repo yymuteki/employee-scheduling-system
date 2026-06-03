@@ -5,6 +5,7 @@ import com.schedule.dto.RequirementResponse;
 import com.schedule.entity.ShiftRequirement;
 import com.schedule.entity.User;
 import com.schedule.service.RequirementService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class RequirementController {
     }
 
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody RequirementRequest request) {
+    public ResponseEntity<?> save(@Valid @RequestBody RequirementRequest request) {
         User user = getCurrentUser();
         ShiftRequirement req = requirementService.save(user, request.getYearMonth(), request.getNaturalInput());
         return ResponseEntity.ok(Map.of("message", "需求已提交", "id", req.getId()));
@@ -46,6 +47,10 @@ public class RequirementController {
     }
 
     private User getCurrentUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof User user) {
+            return user;
+        }
+        throw new RuntimeException("用户未登录");
     }
 }

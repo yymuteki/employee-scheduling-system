@@ -8,6 +8,7 @@ import com.schedule.service.ScheduleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -55,6 +56,20 @@ public class AdminController {
         try {
             Schedule updated = scheduleService.updateShift(id, body.get("shift"));
             return ResponseEntity.ok(Map.of("message", "修改成功", "id", updated.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/schedule/assign")
+    public ResponseEntity<?> assignShift(@RequestBody Map<String, String> body) {
+        try {
+            String yearMonth = body.get("yearMonth");
+            LocalDate date = LocalDate.parse(body.get("date"));
+            Schedule.Shift shiftType = Schedule.Shift.valueOf(body.get("shift"));
+            String userName = body.get("userName");
+            scheduleService.assignShift(yearMonth, date, shiftType, userName);
+            return ResponseEntity.ok(Map.of("message", "排班已更新"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
         }

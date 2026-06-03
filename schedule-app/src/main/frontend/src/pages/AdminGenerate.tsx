@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import type { User } from '../App'
@@ -9,7 +9,30 @@ export default function AdminGenerate({ user, onLogout }: { user: User; onLogout
   const [generating, setGenerating] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [alreadyGenerated, setAlreadyGenerated] = useState(false)
+  const [checkingMonth, setCheckingMonth] = useState(false)
   const navigate = useNavigate()
+
+  // Check if schedule already exists for selected month
+  useEffect(() => {
+    let cancelled = false
+    setCheckingMonth(true)
+    setSuccess(false)
+    setError('')
+    client.get('/schedule/all', { params: { yearMonth } })
+      .then(res => {
+        if (!cancelled) {
+          setAlreadyGenerated(res.data?.data?.length > 0)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAlreadyGenerated(false)
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingMonth(false)
+      })
+    return () => { cancelled = true }
+  }, [yearMonth])
 
   const handleGenerate = async () => {
     setGenerating(true)
@@ -17,6 +40,7 @@ export default function AdminGenerate({ user, onLogout }: { user: User; onLogout
     try {
       await client.post('/admin/generate', { yearMonth })
       setSuccess(true)
+      setAlreadyGenerated(true)
     } catch (err: any) {
       setError(err.response?.data?.error || '生成失败，请重试')
     } finally {
@@ -39,7 +63,7 @@ export default function AdminGenerate({ user, onLogout }: { user: User; onLogout
           <a href="/admin/schedule" style={{ fontSize: 13, color: '#94a3b8', textDecoration: 'none' }}>排班管理</a>
         </div>
         <span style={{ fontSize: 13, color: '#cbd5e1' }}>
-          管理员 (admin) &nbsp;
+          {user.name} &nbsp;
           <span style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={handleLogout}>退出</span>
         </span>
       </div>
@@ -92,10 +116,19 @@ export default function AdminGenerate({ user, onLogout }: { user: User; onLogout
                 {error}
               </div>
             )}
-            <button onClick={handleGenerate}
-              style={{ padding: '12px 32px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, fontSize: 15, cursor: 'pointer' }}>
-              🤖 开始生成排班
-            </button>
+            {checkingMonth ? (
+              <div style={{ textAlign: 'center', padding: '12px', color: '#9ca3af', fontSize: 13 }}>检查中...</div>
+            ) : alreadyGenerated ? (
+              <button disabled
+                style={{ padding: '12px 32px', background: '#d1d5db', color: '#6b7280', border: 'none', borderRadius: 6, fontSize: 15, cursor: 'not-allowed' }}>
+                📅 {parseInt(yearMonth.split('-')[1])}月已生成排班
+              </button>
+            ) : (
+              <button onClick={handleGenerate}
+                style={{ padding: '12px 32px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, fontSize: 15, cursor: 'pointer' }}>
+                🤖 开始生成排班
+              </button>
+            )}
           </>
         )}
       </div>
